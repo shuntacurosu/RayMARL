@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>技術設計 - 適応型マルチエージェント分散強化学習システム</title>
+    
+    <!-- Mermaid.js -->
+    <script src="https://unpkg.com/mermaid@10.9.0/dist/mermaid.min.js"></script>
+    
+    <!-- Prism.js for syntax highlighting -->
+    <link href="https://unpkg.com/prismjs@1.29.0/themes/prism-tomorrow.css" rel="stylesheet">
+    <script src="https://unpkg.com/prismjs@1.29.0/components/prism-core.min.js"></script>
+    <script src="https://unpkg.com/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --accent-color: #3b82f6;
+            --background-color: #ffffff;
+            --surface-color: #f8fafc;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --border-color: #e2e8f0;
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #3b82f6;
+            --secondary-color: #2563eb;
+            --accent-color: #60a5fa;
+            --background-color: #0f172a;
+            --surface-color: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border-color: #334155;
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background-color: var(--background-color);
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: var(--surface-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: var(--shadow);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 100%;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 300px;
+            background: var(--surface-color);
+            border-right: 1px solid var(--border-color);
+            position: fixed;
+            top: 80px;
+            left: 0;
+            height: calc(100vh - 80px);
+            overflow-y: auto;
+            padding: 2rem 1rem;
+            z-index: 100;
+        }
+
+        .toc {
+            position: sticky;
+            top: 0;
+        }
+
+        .toc h3 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .toc ul {
+            list-style: none;
+        }
+
+        .toc li {
+            margin-bottom: 0.5rem;
+        }
+
+        .toc a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            display: block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .toc a:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .toc .active {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 300px;
+            margin-top: 80px;
+            padding: 2rem;
+            max-width: calc(100vw - 300px);
+        }
+
+        .content {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin: 2rem 0 1rem 0;
+            color: var(--secondary-color);
+            border-left: 4px solid var(--primary-color);
+            padding-left: 1rem;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            margin: 1.5rem 0 1rem 0;
+            color: var(--text-primary);
+        }
+
+        h4 {
+            font-size: 1.25rem;
+            margin: 1rem 0 0.5rem 0;
+            color: var(--text-primary);
+        }
+
+        p {
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+
+        /* Code Blocks */
+        pre {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+            box-shadow: var(--shadow);
+        }
+
+        code {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.9rem;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: var(--surface-color);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--primary-color);
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: var(--background-color);
+        }
+
+        /* Mermaid Diagrams */
+        .mermaid {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 2rem;
+            margin: 2rem 0;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        /* Collapsible Sections */
+        .collapsible {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .collapsible-header {
+            background: var(--background-color);
+            padding: 1rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .collapsible-header:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .collapsible-content {
+            padding: 1rem;
+            display: none;
+        }
+
+        .collapsible.active .collapsible-content {
+            display: block;
+        }
+
+        .collapsible-arrow {
+            transition: transform 0.3s ease;
+        }
+
+        .collapsible.active .collapsible-arrow {
+            transform: rotate(180deg);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                max-width: 100vw;
+            }
+
+            .header-content {
+                padding: 0 1rem;
+            }
+
+            .menu-toggle {
+                display: block;
+                background: none;
+                border: none;
+                color: var(--text-primary);
+                font-size: 1.5rem;
+                cursor: pointer;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+        }
+
+        .menu-toggle {
+            display: none;
+        }
+
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Section spacing */
+        .section {
+            margin-bottom: 3rem;
+        }
+
+        /* Highlight boxes */
+        .highlight-box {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin: 1.5rem 0;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .highlight-box h3 {
+            color: white;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+            <a href="#" class="logo">適応型マルチエージェント分散強化学習システム</a>
+            <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <nav class="sidebar" id="sidebar">
+            <div class="toc">
+                <h3>目次</h3>
+                <ul>
+                    <li><a href="#overview">概要</a></li>
+                    <li><a href="#requirements-mapping">要件マッピング</a></li>
+                    <li><a href="#architecture">アーキテクチャ</a></li>
+                    <li><a href="#dataflow">データフロー</a></li>
+                    <li><a href="#components">コンポーネントとインターフェース</a></li>
+                    <li><a href="#data-model">データモデル</a></li>
+                    <li><a href="#error-handling">エラーハンドリング</a></li>
+                    <li><a href="#security">セキュリティ考慮事項</a></li>
+                    <li><a href="#performance">パフォーマンス・スケーラビリティ</a></li>
+                    <li><a href="#testing">テスト戦略</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="content">
+                <h1 id="top">技術設計</h1>
+
+                <section id="overview" class="section">
+                    <h2>概要</h2>
+                    <div class="highlight-box">
+                        <p>適応型マルチエージェント分散強化学習システムは、Rayフレームワークを基盤とした環境非依存のスケーラブルな学習プラットフォームです。動的エージェント管理、学習データ品質検証、オフライン学習データ蓄積機能を統合し、Parameter Server パターンとActor-Learner分散アーキテクチャにより効率的な分散学習を実現します。</p>
+                    </div>
+                </section>
+
+                <section id="requirements-mapping" class="section">
+                    <h2>要件マッピング</h2>
+                    
+                    <h3>設計コンポーネントトレーサビリティ</h3>
+                    <p>各設計コンポーネントは特定の要件に対応します：</p>
+                    <ul>
+                        <li><strong>AgentManager</strong> → REQ-1: 動的エージェント管理システム</li>
+                        <li><strong>EnvironmentAdapter</strong> → REQ-2: 環境非依存インターフェース</li>
+                        <li><strong>DataValidator</strong> → REQ-3: 学習データ検証システム</li>
+                        <li><strong>OfflineDataCollector</strong> → REQ-4: オフライン学習データ蓄積機能</li>
+                        <li><strong>DistributedCoordinator</strong> → REQ-5: 分散学習協調システム</li>
+                        <li><strong>MetricsMonitor</strong> → REQ-6: 性能監視・診断システム</li>
+                    </ul>
+
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <h3>ユーザーストーリーカバレッジ</h3>
+                            <span class="collapsible-arrow">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <p>要件書のすべてのユーザーストーリーに対応：</p>
+                            <ul>
+                                <li><strong>システム管理者</strong>: AgentManagerによる動的スケーリング機能</li>
+                                <li><strong>研究者</strong>: EnvironmentAdapterによる環境非依存実験環境</li>
+                                <li><strong>データサイエンティスト</strong>: DataValidatorによる自動データ品質検証</li>
+                                <li><strong>機械学習エンジニア</strong>: OfflineDataCollectorによるオフライン学習支援</li>
+                                <li><strong>システムアーキテクト</strong>: DistributedCoordinatorによる大規模分散学習</li>
+                                <li><strong>運用エンジニア</strong>: MetricsMonitorによるリアルタイム監視</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="architecture" class="section">
+                    <h2>アーキテクチャ</h2>
+                    
+                    <h3>高次システムアーキテクチャ</h3>
+                    <div class="mermaid">
+                        graph TB
+                            A[Control Interface] --> B[Agent Manager]
+                            B --> C[Distributed Coordinator] 
+                            C --> D[Parameter Server]
+                            D --> E[DQN Agents]
+                            E --> F[Environment Adapter]
+                            F --> G[Data Validator]
+                            G --> H[Experience Buffer]
+                            H --> I[Offline Data Collector]
+                            J[Metrics Monitor] --> C
+                            J --> K[Ray Dashboard]
+                            L[TensorBoard] --> J
+                    </div>
+
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <h3>技術スタック</h3>
+                            <span class="collapsible-arrow">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <p>研究結果と要件分析に基づく技術選択：</p>
+                            <ul>
+                                <li><strong>分散フレームワーク</strong>: Ray 2.0+ (Parameter Server、Actor remoting)</li>
+                                <li><strong>深層学習</strong>: PyTorch (DQN実装、GPU最適化)</li>
+                                <li><strong>環境インターフェース</strong>: Gymnasium + PettingZoo (標準化されたRL環境)</li>
+                                <li><strong>データ処理</strong>: NumPy + Pandas (数値計算、データ前処理)</li>
+                                <li><strong>設定管理</strong>: Hydra + YAML (階層的設定管理)</li>
+                                <li><strong>監視</strong>: Ray Dashboard + TensorBoard (分散実行監視、学習可視化)</li>
+                                <li><strong>テスト</strong>: pytest + Ray Test Utils (分散環境テスト)</li>
+                                <li><strong>シリアライゼーション</strong>: Ray Object Store (ゼロコピー共有メモリ)</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <h3>アーキテクチャ決定根拠</h3>
+                            <span class="collapsible-arrow">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <p>研究に基づく主要技術選択の理由：</p>
+                            <ul>
+                                <li><strong>Ray Framework採用理由</strong>: 2024年研究で証明された階層的スケジューリング、ネイティブMARL支援、統合されたタスク並列・アクター抽象化</li>
+                                <li><strong>Parameter Server パターン</strong>: 分散RLのベストプラクティス、非同期学習と同期学習の柔軟な切り替え対応</li>
+                                <li><strong>PyTorch選択</strong>: 動的グラフ、研究コミュニティでの支配的地位、Rayとのネイティブ統合</li>
+                                <li><strong>Experience Replay分散化</strong>: 2024年研究による優先度付きサンプリングの安定性向上、メモリ効率性の実証</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="dataflow" class="section">
+                    <h2>データフロー</h2>
+                    
+                    <h3>主要ユーザーフロー</h3>
+                    <p>上位3つのユーザーフローのシーケンス図：</p>
+
+                    <h4>1. 動的エージェント追加フロー</h4>
+                    <div class="mermaid">
+                        sequenceDiagram
+                            participant User
+                            participant AgentManager
+                            participant Ray
+                            participant ParameterServer
+                            participant NewAgent
+                            
+                            User->>AgentManager: add_agent_request()
+                            AgentManager->>Ray: create_remote_actor()
+                            Ray-->>AgentManager: agent_actor_handle
+                            AgentManager->>ParameterServer: register_agent()
+                            ParameterServer->>NewAgent: sync_parameters()
+                            NewAgent-->>AgentManager: ready_signal
+                            AgentManager-->>User: agent added successfully
+                    </div>
+
+                    <h4>2. 学習データ検証・蓄積フロー</h4>
+                    <div class="mermaid">
+                        sequenceDiagram
+                            participant Agent
+                            participant Environment
+                            participant DataValidator
+                            participant ExperienceBuffer
+                            participant OfflineCollector
+                            
+                            Agent->>Environment: execute_action()
+                            Environment-->>Agent: state, reward, done
+                            Agent->>DataValidator: validate_experience()
+                            DataValidator-->>Agent: validation_result
+                            alt data_valid
+                                Agent->>ExperienceBuffer: store_experience()
+                                ExperienceBuffer->>OfflineCollector: collect_if_offline_mode()
+                            else data_invalid  
+                                Agent->>DataValidator: log_invalid_data()
+                            end
+                    </div>
+
+                    <h4>3. 分散学習協調フロー</h4>
+                    <div class="mermaid">
+                        sequenceDiagram
+                            participant Agents
+                            participant ExperienceBuffer
+                            participant ParameterServer
+                            participant MetricsMonitor
+                            
+                            loop Training Iteration
+                                Agents->>ExperienceBuffer: collect_experiences()
+                                ExperienceBuffer->>ParameterServer: sample_batch()
+                                ParameterServer->>ParameterServer: compute_gradients()
+                                ParameterServer->>Agents: broadcast_parameters()
+                                ParameterServer->>MetricsMonitor: report_metrics()
+                            end
+                    </div>
+                </section>
+
+                <section id="components" class="section">
+                    <h2>コンポーネントとインターフェース</h2>
+                    
+                    <h3>バックエンドサービス・メソッドシグネチャ</h3>
+                    
+<pre><code class="language-python">class AgentManager:
+    def add_agent(self, agent_config: AgentConfig) -> str:  # エージェント追加、IDを返す
+    def remove_agent(self, agent_id: str) -> bool:         # エージェント安全削除
+    def scale_agents(self, target_count: int) -> List[str]: # 指定数にスケーリング
+    def get_agent_status(self) -> Dict[str, AgentStatus]:   # 全エージェント状態取得
+
+class EnvironmentAdapter:
+    def register_environment(self, env_spec: EnvSpec) -> bool:     # 環境登録
+    def create_environment(self, env_name: str) -> Environment:    # 環境インスタンス作成
+    def normalize_observation(self, obs: Any) -> np.ndarray:       # 観測値正規化
+    def normalize_action_space(self, action_space: Any) -> ActionSpace: # 行動空間正規化
+
+class DataValidator:
+    def validate_experience(self, experience: Experience) -> ValidationResult: # 経験データ検証
+    def detect_outliers(self, data: np.ndarray) -> List[int]:                # 異常値検出
+    def check_consistency(self, multi_agent_data: Dict) -> ConsistencyReport: # 整合性チェック
+    def apply_constraints(self, state_sequence: List) -> bool:                # 物理制約チェック
+
+class DistributedCoordinator:
+    def initialize_cluster(self, cluster_config: ClusterConfig) -> bool:      # クラスタ初期化
+    def coordinate_learning(self, agents: List[Agent]) -> None:               # 学習協調
+    def handle_worker_failure(self, failed_worker_id: str) -> bool:           # 障害処理
+    def balance_workload(self, current_load: Dict) -> RebalanceAction:        # 負荷分散
+
+class OfflineDataCollector:
+    def enable_offline_mode(self, config: OfflineConfig) -> bool:             # オフラインモード有効化
+    def collect_external_actions(self, action_source: ActionSource) -> int:   # 外部アクション収集
+    def generate_statistics(self, data_range: TimeRange) -> StatisticsReport: # 統計レポート生成
+    def archive_old_data(self, retention_policy: RetentionPolicy) -> int:     # 古いデータアーカイブ
+</code></pre>
+
+                    <h3>APIエンドポイント</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Route</th>
+                                <th>Purpose</th>
+                                <th>Auth</th>
+                                <th>Status Codes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>POST</td>
+                                <td>/api/agents</td>
+                                <td>エージェント追加</td>
+                                <td>Required</td>
+                                <td>201, 400, 401, 500</td>
+                            </tr>
+                            <tr>
+                                <td>DELETE</td>
+                                <td>/api/agents/:id</td>
+                                <td>エージェント削除</td>
+                                <td>Required</td>
+                                <td>204, 401, 404, 500</td>
+                            </tr>
+                            <tr>
+                                <td>GET</td>
+                                <td>/api/agents/status</td>
+                                <td>エージェント状態取得</td>
+                                <td>Required</td>
+                                <td>200, 401, 500</td>
+                            </tr>
+                            <tr>
+                                <td>POST</td>
+                                <td>/api/environments</td>
+                                <td>環境登録</td>
+                                <td>Required</td>
+                                <td>201, 400, 401, 500</td>
+                            </tr>
+                            <tr>
+                                <td>GET</td>
+                                <td>/api/metrics</td>
+                                <td>性能メトリクス取得</td>
+                                <td>Required</td>
+                                <td>200, 401, 500</td>
+                            </tr>
+                            <tr>
+                                <td>POST</td>
+                                <td>/api/offline/enable</td>
+                                <td>オフラインモード有効化</td>
+                                <td>Required</td>
+                                <td>200, 400, 401, 500</td>
+                            </tr>
+                            <tr>
+                                <td>GET</td>
+                                <td>/api/validation/report</td>
+                                <td>データ検証レポート</td>
+                                <td>Required</td>
+                                <td>200, 401, 500</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section id="data-model" class="section">
+                    <h2>データモデル</h2>
+                    
+                    <h3>ドメインエンティティ</h3>
+                    <ol>
+                        <li><strong>Agent</strong>: 個別の学習エージェント（DQNネットワーク、状態、設定）</li>
+                        <li><strong>Environment</strong>: 学習環境（Gym/PettingZoo ラッパー、状態空間、行動空間）</li>
+                        <li><strong>Experience</strong>: 学習経験（状態、行動、報酬、次状態、終了フラグ）</li>
+                        <li><strong>ExperienceBuffer</strong>: 経験リプレイバッファ（優先度付きサンプリング対応）</li>
+                        <li><strong>ValidationResult</strong>: データ検証結果（妥当性、異常値、品質スコア）</li>
+                    </ol>
+
+                    <h3>エンティティ関係図</h3>
+                    <div class="mermaid">
+                        erDiagram
+                            AGENT ||--o{ EXPERIENCE : "generates"
+                            ENVIRONMENT ||--o{ EXPERIENCE : "produces"
+                            EXPERIENCE_BUFFER ||--|{ EXPERIENCE : "stores"
+                            AGENT ||--|| DQN_NETWORK : "has"
+                            VALIDATION_RESULT ||--|| EXPERIENCE : "validates"
+                            PARAMETER_SERVER ||--o{ AGENT : "coordinates"
+                    </div>
+
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <h3>データモデル定義</h3>
+                            <span class="collapsible-arrow">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+<pre><code class="language-python">@dataclass
+class Agent:
+    id: str
+    network: DQNNetwork
+    target_network: DQNNetwork
+    optimizer: torch.optim.Optimizer
+    config: AgentConfig
+    status: AgentStatus
+    created_at: datetime
+    last_updated: datetime
+
+@dataclass 
+class Experience:
+    state: np.ndarray
+    action: int
+    reward: float  
+    next_state: np.ndarray
+    done: bool
+    agent_id: str
+    timestamp: datetime
+    priority: float = 1.0
+    
+@dataclass
+class ValidationResult:
+    is_valid: bool
+    quality_score: float
+    anomaly_flags: List[str]
+    constraint_violations: List[str]
+    validated_at: datetime
+
+@dataclass
+class EnvironmentSpec:
+    name: str
+    observation_space: Any
+    action_space: Any
+    max_episode_steps: int
+    wrapper_config: Dict[str, Any]
+    registered_at: datetime
+</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <h3>データベーススキーマ</h3>
+                            <span class="collapsible-arrow">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <p>Ray Object Store + SQLite による永続化：</p>
+<pre><code class="language-sql">-- エージェント管理テーブル
+CREATE TABLE agents (
+    id TEXT PRIMARY KEY,
+    config JSON,
+    status TEXT,
+    network_checkpoints TEXT,
+    created_at TIMESTAMP,
+    last_updated TIMESTAMP
+);
+
+-- 環境登録テーブル  
+CREATE TABLE environments (
+    name TEXT PRIMARY KEY,
+    spec JSON,
+    adapter_class TEXT,
+    registered_at TIMESTAMP
+);
+
+-- 検証ログテーブル
+CREATE TABLE validation_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    experience_hash TEXT,
+    validation_result JSON,
+    validated_at TIMESTAMP
+);
+</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <h3>マイグレーション戦略</h3>
+                            <span class="collapsible-arrow">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <ul>
+                                <li><strong>バージョン管理</strong>: Alembic による スキーマバージョン管理</li>
+                                <li><strong>後方互換性</strong>: 古いExperience形式の自動変換</li>
+                                <li><strong>データ変換</strong>: バッチ処理による大容量データ移行</li>
+                                <li><strong>インデックス戦略</strong>: timestamp, agent_id にインデックス作成</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="error-handling" class="section">
+                    <h2>エラーハンドリング</h2>
+                    
+                    <h3>階層的エラー処理戦略</h3>
+                    <ol>
+                        <li><strong>Ray Level</strong>: ActorException, WorkerFailure の捕捉と再試行</li>
+                        <li><strong>Component Level</strong>: 各コンポーネント固有の例外定義と処理</li>
+                        <li><strong>Application Level</strong>: グローバルエラーハンドラによる統合的処理</li>
+                        <li><strong>User Level</strong>: 分かりやすいエラーメッセージと復旧提案</li>
+                    </ol>
+
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <h3>カスタム例外階層</h3>
+                            <span class="collapsible-arrow">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+<pre><code class="language-python">class AdaptiveMAException(Exception):
+    """基底例外クラス"""
+    pass
+
+class AgentManagementError(AdaptiveMAException):
+    """エージェント管理関連エラー"""
+    pass
+
+class EnvironmentAdapterError(AdaptiveMAException):
+    """環境アダプタ関連エラー"""
+    pass
+
+class DataValidationError(AdaptiveMAException):
+    """データ検証関連エラー"""
+    pass
+
+class DistributedCoordinationError(AdaptiveMAException):
+    """分散協調関連エラー"""
+    pass
+</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="security" class="section">
+                    <h2>セキュリティ考慮事項</h2>
+                    
+                    <h3>認証・認可</h3>
+                    <p>Ray Clusterの認証機能活用：</p>
+                    <div class="mermaid">
+                        sequenceDiagram
+                            participant Client
+                            participant AuthService
+                            participant RayCluster
+                            participant Agent
+                            
+                            Client->>AuthService: authenticate(credentials)
+                            AuthService-->>Client: jwt_token
+                            Client->>RayCluster: connect(jwt_token)
+                            RayCluster->>Agent: authorized_request()
+                    </div>
+
+                    <h3>認可マトリクス</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Role</th>
+                                <th>Agent Management</th>
+                                <th>Environment Config</th>
+                                <th>Data Access</th>
+                                <th>System Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Administrator</td>
+                                <td>Full</td>
+                                <td>Full</td>
+                                <td>Full</td>
+                                <td>Full</td>
+                            </tr>
+                            <tr>
+                                <td>Researcher</td>
+                                <td>Read</td>
+                                <td>Full</td>
+                                <td>Read</td>
+                                <td>None</td>
+                            </tr>
+                            <tr>
+                                <td>Data Scientist</td>
+                                <td>Read</td>
+                                <td>Read</td>
+                                <td>Full</td>
+                                <td>None</td>
+                            </tr>
+                            <tr>
+                                <td>Observer</td>
+                                <td>Read</td>
+                                <td>Read</td>
+                                <td>Read</td>
+                                <td>None</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <h3>セキュリティベストプラクティス</h3>
+                            <span class="collapsible-arrow">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <ul>
+                                <li><strong>セッション管理戦略</strong>
+                                    <ul>
+                                        <li>JWT Token: ステートレス認証、有効期限管理</li>
+                                        <li>Ray Security: クラスタレベルの認証・暗号化</li>
+                                        <li>セッション永続化: Redis による分散セッション管理</li>
+                                    </ul>
+                                </li>
+                                <li><strong>データ保護</strong>
+                                    <ul>
+                                        <li>入力検証: Pydantic による厳密なスキーマ検証</li>
+                                        <li>暗号化: Ray TLS による通信暗号化、保存データのAES暗号化</li>
+                                        <li>機密データ処理: 環境変数による認証情報管理、ログからの機密情報除外</li>
+                                    </ul>
+                                </li>
+                                <li><strong>OWASP対策</strong>: 入力検証、SQLインジェクション防止、XSS対策</li>
+                                <li><strong>API Rate Limiting</strong>: Ray Actor レベルでのリクエスト制限</li>
+                                <li><strong>CORS設定</strong>: 開発・本番環境での適切なオリジン制限</li>
+                                <li><strong>セキュリティヘッダ</strong>: HSTS, CSP, X-Frame-Options の実装</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="performance" class="section">
+                    <h2>パフォーマンス・スケーラビリティ</h2>
+                    
+                    <h3>パフォーマンス目標</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>メトリクス</th>
+                                <th>目標値</th>
+                                <th>測定方法</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>エージェント追加時間(p95)</td>
+                                <td>&lt; 2秒</td>
+                                <td>Agent Management API</td>
+                            </tr>
+                            <tr>
+                                <td>Experience処理時間(p99)</td>
+                                <td>&lt; 10ms</td>
+                                <td>Data Pipeline監視</td>
+                            </tr>
+                            <tr>
+                                <td>学習更新頻度</td>
+                                <td>&gt; 100 updates/sec</td>
+                                <td>Parameter Server監視</td>
+                            </tr>
+                            <tr>
+                                <td>データベースクエリ(p99)</td>
+                                <td>&lt; 50ms</td>
+                                <td>SQLiteクエリ監視</td>
+                            </tr>
+                            <tr>
+                                <td>同時エージェント数</td>
+                                <td>&gt; 1000 agents</td>
+                                <td>システム容量テスト</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <h3>最適化戦略</h3>
+                            <span class="collapsible-arrow">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <h4>キャッシュ戦略</h4>
+                            <ul>
+                                <li><strong>Ray Object Store</strong>: Experience Buffer の共有メモリキャッシュ</li>
+                                <li><strong>Parameter Cache</strong>: 頻繁にアクセスされるモデルパラメータ</li>
+                                <li><strong>Environment Cache</strong>: 環境インスタンス の再利用プール</li>
+                                <li><strong>Validation Cache</strong>: 繰り返し検証結果のメモ化</li>
+                            </ul>
+
+                            <h4>スケーラビリティアプローチ</h4>
+                            <ul>
+                                <li><strong>水平スケーリング</strong>: Ray Cluster の動的ノード追加</li>
+                                <li><strong>垂直スケーリング</strong>: GPU メモリとバッチサイズ最適化</li>
+                                <li><strong>非同期処理</strong>: Ray remote function による並列Experience処理</li>
+                                <li><strong>自動スケーリング</strong>: Cluster Autoscaler による負荷ベース調整</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="testing" class="section">
+                    <h2>テスト戦略</h2>
+                    
+                    <h3>テストカバレッジ要件</h3>
+                    <ul>
+                        <li><strong>ユニットテスト</strong>: ≥85% コードカバレッジ</li>
+                        <li><strong>統合テスト</strong>: 全API エンドポイントと Ray アクター連携</li>
+                        <li><strong>E2Eテスト</strong>: クリティカルな学習パイプライン</li>
+                        <li><strong>パフォーマンステスト</strong>: 予想ピーク負荷の2倍での負荷テスト</li>
+                    </ul>
+
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <h3>テストアプローチ詳細</h3>
+                            <span class="collapsible-arrow">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <h4>1. ユニットテスト</h4>
+                            <ul>
+                                <li>個別コンポーネント機能の独立テスト</li>
+                                <li>Ray Remote の モック化</li>
+                                <li>ビジネスロジックの重点テスト</li>
+                            </ul>
+
+                            <h4>2. 統合テスト</h4>
+                            <ul>
+                                <li>Ray Cluster での分散コンポーネント連携テスト</li>
+                                <li>Environment Adapter の実環境テスト</li>
+                                <li>Experience Buffer の並行アクセステスト</li>
+                            </ul>
+
+                            <h4>3. End-to-Endテスト</h4>
+                            <ul>
+                                <li>エージェント追加から学習完了までの完全フロー</li>
+                                <li>データ検証パイプラインの統合テスト</li>
+                                <li>障害回復シナリオテスト</li>
+                            </ul>
+
+                            <h4>4. パフォーマンステスト</h4>
+                            <ul>
+                                <li>Ray Test Utils を使用した負荷テスト</li>
+                                <li>大量エージェントでのストレステスト</li>
+                                <li>メモリリーク検証のための長時間テスト</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <h3>CI/CDパイプライン</h3>
+                    <div class="mermaid">
+                        graph LR
+                            A[Code Push] --> B[Linting & Format]
+                            B --> C[Unit Tests]
+                            C --> D[Integration Tests]
+                            D --> E[Build Docker Image]
+                            E --> F[E2E Tests on Ray Cluster]
+                            F --> G[Performance Tests]
+                            G --> H[Deploy to Staging]
+                            H --> I[Production Deployment]
+                    </div>
+
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            <h3>テスト環境構成</h3>
+                            <span class="collapsible-arrow">▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <ul>
+                                <li><strong>Local</strong>: pytest + Ray local cluster (開発者環境)</li>
+                                <li><strong>CI</strong>: GitHub Actions + Ray cluster simulation</li>
+                                <li><strong>Staging</strong>: 本番相当の Ray Cluster 環境</li>
+                                <li><strong>Performance</strong>: 専用GPU cluster での負荷テスト環境</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+        });
+
+        // Theme toggle functionality
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            // Reinitialize Mermaid with new theme
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: newTheme === 'dark' ? 'dark' : 'default'
+            });
+        }
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+
+        // Mobile sidebar toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('mobile-open');
+        }
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('.toc a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // Active navigation highlighting
+        function updateActiveNav() {
+            const sections = document.querySelectorAll('section[id]');
+            const navLinks = document.querySelectorAll('.toc a');
+            
+            let currentSection = '';
+            sections.forEach(section => {
+                const rect = section.getBoundingClientRect();
+                if (rect.top <= 100 && rect.bottom >= 100) {
+                    currentSection = section.id;
+                }
+            });
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${currentSection}`) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        // Collapsible sections
+        function initCollapsibles() {
+            document.querySelectorAll('.collapsible-header').forEach(header => {
+                header.addEventListener('click', function() {
+                    const collapsible = this.parentElement;
+                    collapsible.classList.toggle('active');
+                });
+            });
+        }
+
+        // Initialize on load
+        window.addEventListener('load', function() {
+            updateActiveNav();
+            initCollapsibles();
+        });
+
+        window.addEventListener('scroll', updateActiveNav);
+    </script>
+</body>
+</html>
