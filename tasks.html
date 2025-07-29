@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>適応型マルチエージェント分散強化学習システム - 実装計画</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --background-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --primary-color: #4a90e2;
+            --secondary-color: #2a2a2a;
+            --border-color: #444;
+            --hover-color: #333;
+            --progress-bar-bg: #333;
+            --progress-bar-fill: #4a90e2;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            background-color: var(--secondary-color);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #ccc;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background-color: var(--hover-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+
+        .main-progress {
+            margin-bottom: 2rem;
+        }
+
+        .progress-bar-container {
+            background-color: var(--progress-bar-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            height: 24px;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, var(--progress-bar-fill), #6ba3f5);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease-in-out;
+            border-radius: 10px;
+            position: relative;
+        }
+        
+        .progress-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+            z-index: 2;
+        }
+
+        details {
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: var(--secondary-color);
+        }
+
+        summary {
+            padding: 1.5rem;
+            background-color: var(--hover-color);
+            cursor: pointer;
+            outline: none;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.3s ease;
+            font-size: 1.1rem;
+        }
+        
+        summary:hover {
+            background-color: #3a3a3a;
+        }
+
+        .section-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .section-progress {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .section-progress-bar {
+            width: 100px;
+            height: 6px;
+            background-color: var(--progress-bar-bg);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .section-progress-fill {
+            height: 100%;
+            background-color: var(--success-color);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            display: flex;
+            align-items: flex-start;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.2s ease;
+        }
+        
+        li:last-child {
+            border-bottom: none;
+        }
+
+        li:hover {
+            background-color: rgba(255,255,255,0.02);
+        }
+
+        input[type="checkbox"] {
+            margin-right: 1rem;
+            min-width: 1.3em;
+            height: 1.3em;
+            cursor: pointer;
+            margin-top: 0.2rem;
+        }
+
+        .task-content {
+            flex-grow: 1;
+        }
+
+        .task-title {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+
+        .task-details {
+            font-size: 0.9rem;
+            color: #ccc;
+            margin-bottom: 0.5rem;
+        }
+
+        .task-details ul {
+            margin: 0.5rem 0 0 1rem;
+        }
+
+        .task-details li {
+            padding: 0.2rem 0;
+            border: none;
+        }
+
+        .req-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .req-tag {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.2em 0.6em;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 500;
+            cursor: help;
+            transition: background-color 0.2s ease;
+        }
+
+        .req-tag:hover {
+            background-color: #5ba0f2;
+        }
+
+        .completed {
+            opacity: 0.7;
+        }
+
+        .completed .task-title {
+            text-decoration: line-through;
+            color: var(--success-color);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            summary {
+                padding: 1rem;
+                font-size: 1rem;
+            }
+            
+            li {
+                padding: 1rem;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            input[type="checkbox"] {
+                margin-bottom: 0.5rem;
+            }
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 300px;
+            background-color: #333;
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -150px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>実装計画</h1>
+        <p class="subtitle">適応型マルチエージェント分散強化学習システム</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div id="total-tasks" class="stat-number">22</div>
+                <div class="stat-label">総タスク数</div>
+            </div>
+            <div class="stat-card">
+                <div id="completed-tasks" class="stat-number">0</div>
+                <div class="stat-label">完了タスク</div>
+            </div>
+            <div class="stat-card">
+                <div id="completion-rate" class="stat-number">0%</div>
+                <div class="stat-label">完了率</div>
+            </div>
+            <div class="stat-card">
+                <div id="active-sections" class="stat-number">11</div>
+                <div class="stat-label">アクティブセクション</div>
+            </div>
+        </div>
+
+        <div class="main-progress">
+            <h3>全体の進捗</h3>
+            <div class="progress-bar-container">
+                <div id="main-progress-bar" class="progress-bar"></div>
+                <span id="main-progress-label" class="progress-label">0%</span>
+            </div>
+        </div>
+
+        <section id="task-sections">
+            <details>
+                <summary>
+                    <span>1. プロジェクト構造とコアインターフェース設定</span>
+                    <div class="section-info">
+                        <span class="section-progress">0/2</span>
+                        <div class="section-progress-bar">
+                            <div class="section-progress-fill"></div>
+                        </div>
+                    </div>
+                </summary>
+                <ul>
+                    <li>
+                        <input type="checkbox" id="task1-1">
+                        <div class="task-content">
+                            <div class="task-title">プロジェクトディレクトリ構造とベースインターフェース作成</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>`src/agents/`, `src/networks/`, `src/environments/`, `src/distributed/`, `src/utils/` ディレクトリ構造を作成</li>
+                                    <li>ベースエージェント、環境アダプタ、データ検証器の抽象基底クラスを定義</li>
+                                    <li>テストフレームワーク（pytest + Ray Test Utils）をセットアップ</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">1.1<span class="tooltiptext">動的エージェント管理: エージェント追加機能</span></span>
+                                <span class="req-tag tooltip">2.1<span class="tooltiptext">環境非依存: 標準化されたインターフェース</span></span>
+                                <span class="req-tag tooltip">3.1<span class="tooltiptext">データ検証: 妥当性検証機能</span></span>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="task1-2">
+                        <div class="task-content">
+                            <div class="task-title">設定管理システムとユーティリティ実装</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>Hydra + YAML による階層的設定管理システムを実装</li>
+                                    <li>ログ機能、メトリクス収集、エラーハンドリングユーティリティを作成</li>
+                                    <li>カスタム例外階層（AdaptiveMAException）を定義</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">6.1<span class="tooltiptext">性能監視: 学習進捗記録機能</span></span>
+                                <span class="req-tag tooltip">6.4<span class="tooltiptext">性能監視: リソース使用率監視</span></span>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </details>
+
+            <details>
+                <summary>
+                    <span>2. データモデルとバリデーション（テスト駆動アプローチ）</span>
+                    <div class="section-info">
+                        <span class="section-progress">0/3</span>
+                        <div class="section-progress-bar">
+                            <div class="section-progress-fill"></div>
+                        </div>
+                    </div>
+                </summary>
+                <ul>
+                    <li>
+                        <input type="checkbox" id="task2-1">
+                        <div class="task-content">
+                            <div class="task-title">コアデータモデルのテストと実装</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>Agent, Experience, ValidationResult エンティティのテストを最初に作成</li>
+                                    <li>Pydantic を使用した型安全なデータクラスを実装</li>
+                                    <li>基本的なバリデーション機能（フィールド検証、制約チェック）をテスト</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">3.1<span class="tooltiptext">データ検証: 妥当性検証機能</span></span>
+                                <span class="req-tag tooltip">3.2<span class="tooltiptext">データ検証: 異常値検出機能</span></span>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="task2-2">
+                        <div class="task-content">
+                            <div class="task-title">データ検証システムの実装</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>DataValidator クラスのテストを作成（異常値検出、整合性チェック）</li>
+                                    <li>統計的異常値検出アルゴリズム（IQR、Z-score）を実装</li>
+                                    <li>マルチエージェント環境でのデータ整合性チェック機能を追加</li>
+                                    <li>物理制約違反検出機能（連続状態変化の妥当性）をテスト・実装</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">3.1<span class="tooltiptext">データ検証: 妥当性検証機能</span></span>
+                                <span class="req-tag tooltip">3.2<span class="tooltiptext">データ検証: 異常値検出機能</span></span>
+                                <span class="req-tag tooltip">3.3<span class="tooltiptext">データ検証: 報酬値クリッピング</span></span>
+                                <span class="req-tag tooltip">3.4<span class="tooltiptext">データ検証: 検証結果ログ記録</span></span>
+                                <span class="req-tag tooltip">3.5<span class="tooltiptext">データ検証: エージェント間整合性チェック</span></span>
+                                <span class="req-tag tooltip">3.6<span class="tooltiptext">データ検証: 物理制約違反検出</span></span>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="task2-3">
+                        <div class="task-content">
+                            <div class="task-title">Experience Buffer と優先度付きサンプリング実装</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>Experience Buffer のテスト作成（CRUD操作、同時アクセス）</li>
+                                    <li>Ray Object Store を使用した分散Experience Buffer を実装</li>
+                                    <li>優先度付きサンプリング（Prioritized Experience Replay）をテスト・実装</li>
+                                    <li>メモリ効率化とガベージコレクション機能を追加</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">5.6<span class="tooltiptext">分散学習: 優先度付きサンプリング</span></span>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </details>
+
+            <details>
+                <summary>
+                    <span>3. 環境非依存インターフェース層</span>
+                    <div class="section-info">
+                        <span class="section-progress">0/2</span>
+                        <div class="section-progress-bar">
+                            <div class="section-progress-fill"></div>
+                        </div>
+                    </div>
+                </summary>
+                <ul>
+                    <li>
+                        <input type="checkbox" id="task3-1">
+                        <div class="task-content">
+                            <div class="task-title">Environment Adapter システムの実装</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>EnvironmentAdapter インターフェースのテストを作成</li>
+                                    <li>Gymnasium + PettingZoo 環境用の標準アダプタを実装</li>
+                                    <li>観測値・行動空間の自動正規化機能をテスト・実装</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">2.1<span class="tooltiptext">環境非依存: 標準化されたインターフェース</span></span>
+                                <span class="req-tag tooltip">2.2<span class="tooltiptext">環境非依存: ネットワーク構造自動適応</span></span>
+                                <span class="req-tag tooltip">2.3<span class="tooltiptext">環境非依存: データ正規化機能</span></span>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="task3-2">
+                        <div class="task-content">
+                            <div class="task-title">動的環境適応機能の実装</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>環境変更時のネットワーク構造自動適応テストを作成</li>
+                                    <li>連続値制御環境での離散化/Policy Gradient 自動切り替え機能を実装</li>
+                                    <li>複数環境同時実行での個別最適化機能をテスト・実装</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">2.2<span class="tooltiptext">環境非依存: ネットワーク構造自動適応</span></span>
+                                <span class="req-tag tooltip">2.4<span class="tooltiptext">環境非依存: 複数環境同時実行最適化</span></span>
+                                <span class="req-tag tooltip">2.5<span class="tooltiptext">環境非依存: 連続値制御環境対応</span></span>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </details>
+
+            <details>
+                <summary>
+                    <span>4. 分散エージェント管理システム</span>
+                    <div class="section-info">
+                        <span class="section-progress">0/2</span>
+                        <div class="section-progress-bar">
+                            <div class="section-progress-fill"></div>
+                        </div>
+                    </div>
+                </summary>
+                <ul>
+                    <li>
+                        <input type="checkbox" id="task4-1">
+                        <div class="task-content">
+                            <div class="task-title">Agent Manager の実装</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>AgentManager クラスのテストを作成（エージェント追加・削除・スケーリング）</li>
+                                    <li>Ray Remote Actor を使用した動的エージェント管理を実装</li>
+                                    <li>エージェント状態監視と負荷バランシング機能をテスト・実装</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">1.1<span class="tooltiptext">動的エージェント管理: エージェント追加機能</span></span>
+                                <span class="req-tag tooltip">1.2<span class="tooltiptext">動的エージェント管理: エージェント削除機能</span></span>
+                                <span class="req-tag tooltip">1.3<span class="tooltiptext">動的エージェント管理: 負荷バランシング</span></span>
+                                <span class="req-tag tooltip">1.4<span class="tooltiptext">動的エージェント管理: 学習プロセス継続</span></span>
+                                <span class="req-tag tooltip">1.5<span class="tooltiptext">動的エージェント管理: リソース使用量監視</span></span>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="task4-2">
+                        <div class="task-content">
+                            <div class="task-title">DQN Agent の実装</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>DQN Agent クラスのテストを作成（学習、推論、経験収集）</li>
+                                    <li>PyTorch を使用したDQNネットワーク（CNN + FC）を実装</li>
+                                    <li>Target Network の更新機能とDouble DQN サポートを追加</li>
+                                    <li>エージェント間のパラメータ同期機能をテスト・実装</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">5.1<span class="tooltiptext">分散学習: 経験データ共有</span></span>
+                                <span class="req-tag tooltip">5.2<span class="tooltiptext">分散学習: パラメータ同期</span></span>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </details>
+
+            <details>
+                <summary>
+                    <span>5. 分散学習協調システム</span>
+                    <div class="section-info">
+                        <span class="section-progress">0/2</span>
+                        <div class="section-progress-bar">
+                            <div class="section-progress-fill"></div>
+                        </div>
+                    </div>
+                </summary>
+                <ul>
+                    <li>
+                        <input type="checkbox" id="task5-1">
+                        <div class="task-content">
+                            <div class="task-title">Parameter Server の実装</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>Parameter Server のテストを作成（パラメータ同期、勾配更新）</li>
+                                    <li>Ray Actor を使用した分散Parameter Server を実装</li>
+                                    <li>非同期パラメータ更新と一貫性維持機能をテスト・実装</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">5.1<span class="tooltiptext">分散学習: 経験データ共有</span></span>
+                                <span class="req-tag tooltip">5.2<span class="tooltiptext">分散学習: パラメータ同期</span></span>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="task5-2">
+                        <div class="task-content">
+                            <div class="task-title">Distributed Coordinator の実装</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>DistributedCoordinator のテストを作成（クラスタ管理、障害処理）</li>
+                                    <li>Ray Cluster 初期化と動的スケーリング機能を実装</li>
+                                    <li>ワーカー障害検出と自動復旧機能をテスト・実装</li>
+                                    <li>負荷分散とリソース最適化機能を追加</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">5.3<span class="tooltiptext">分散学習: 障害検出と処理継続</span></span>
+                                <span class="req-tag tooltip">5.4<span class="tooltiptext">分散学習: 負荷不均衡自動調整</span></span>
+                                <span class="req-tag tooltip">5.5<span class="tooltiptext">分散学習: GPUリソース効率配分</span></span>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </details>
+
+            <details>
+                <summary>
+                    <span>6. オフライン学習データ蓄積機能</span>
+                    <div class="section-info">
+                        <span class="section-progress">0/2</span>
+                        <div class="section-progress-bar">
+                            <div class="section-progress-fill"></div>
+                        </div>
+                    </div>
+                </summary>
+                <ul>
+                    <li>
+                        <input type="checkbox" id="task6-1">
+                        <div class="task-content">
+                            <div class="task-title">Offline Data Collector の実装</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>OfflineDataCollector のテストを作成（オフラインモード、外部アクション処理）</li>
+                                    <li>推論をスキップして外部アクションを受け取る機能を実装</li>
+                                    <li>データ蓄積時の統計情報生成とレポート機能をテスト・実装</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">4.1<span class="tooltiptext">オフライン学習: 推論スキップ機能</span></span>
+                                <span class="req-tag tooltip">4.2<span class="tooltiptext">オフライン学習: 外部アクション処理</span></span>
+                                <span class="req-tag tooltip">4.3<span class="tooltiptext">オフライン学習: 統計情報生成</span></span>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="task6-2">
+                        <div class="task-content">
+                            <div class="task-title">データ品質監視とアーカイブ機能</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>データ多様性・品質監視機能のテストを作成</li>
+                                    <li>データソース記録と来源追跡機能を実装</li>
+                                    <li>容量制限に基づく古いデータの自動アーカイブ機能をテスト・実装</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">4.4<span class="tooltiptext">オフライン学習: データ多様性監視</span></span>
+                                <span class="req-tag tooltip">4.5<span class="tooltiptext">オフライン学習: データソース記録</span></span>
+                                <span class="req-tag tooltip">4.6<span class="tooltiptext">オフライン学習: 古いデータアーカイブ</span></span>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </details>
+
+            <details>
+                <summary>
+                    <span>7. 性能監視・診断システム</span>
+                    <div class="section-info">
+                        <span class="section-progress">0/2</span>
+                        <div class="section-progress-bar">
+                            <div class="section-progress-fill"></div>
+                        </div>
+                    </div>
+                </summary>
+                <ul>
+                    <li>
+                        <input type="checkbox" id="task7-1">
+                        <div class="task-content">
+                            <div class="task-title">Metrics Monitor の実装</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>MetricsMonitor のテストを作成（メトリクス収集、警告システム）</li>
+                                    <li>学習進捗、報酬推移、ネットワーク損失の記録機能を実装</li>
+                                    <li>性能異常検出と警告システムをテスト・実装</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">6.1<span class="tooltiptext">性能監視: 学習進捗記録機能</span></span>
+                                <span class="req-tag tooltip">6.2<span class="tooltiptext">性能監視: 性能異常警告システム</span></span>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="task7-2">
+                        <div class="task-content">
+                            <div class="task-title">Ray Dashboard 統合と可視化機能</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>Ray Dashboard へのカスタムメトリクス表示機能のテストを作成</li>
+                                    <li>TensorBoard 統合による学習曲線可視化を実装</li>
+                                    <li>リアルタイム監視とリソース使用率追跡機能をテスト・実装</li>
+                                    <li>自動診断レポート生成機能を追加</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">6.3<span class="tooltiptext">性能監視: Ray Dashboardメトリクス表示</span></span>
+                                <span class="req-tag tooltip">6.4<span class="tooltiptext">性能監視: リソース使用率監視</span></span>
+                                <span class="req-tag tooltip">6.5<span class="tooltiptext">性能監視: TensorBoard可視化</span></span>
+                                <span class="req-tag tooltip">6.6<span class="tooltiptext">性能監視: 自動診断レポート生成</span></span>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </details>
+
+            <details>
+                <summary>
+                    <span>8. API層とWebインターフェース</span>
+                    <div class="section-info">
+                        <span class="section-progress">0/2</span>
+                        <div class="section-progress-bar">
+                            <div class="section-progress-fill"></div>
+                        </div>
+                    </div>
+                </summary>
+                <ul>
+                    <li>
+                        <input type="checkbox" id="task8-1">
+                        <div class="task-content">
+                            <div class="task-title">REST API エンドポイントの実装</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>エージェント管理API（POST /api/agents, DELETE /api/agents/:id）のテストを作成</li>
+                                    <li>環境登録API（POST /api/environments）と設定管理APIを実装</li>
+                                    <li>メトリクス取得API（GET /api/metrics）とデータ検証レポートAPIをテスト・実装</li>
+                                    <li>JWT認証機能とアクセス制御を追加</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">1.1<span class="tooltiptext">動的エージェント管理: エージェント追加機能</span></span>
+                                <span class="req-tag tooltip">1.2<span class="tooltiptext">動的エージェント管理: エージェント削除機能</span></span>
+                                <span class="req-tag tooltip">2.1<span class="tooltiptext">環境非依存: 標準化されたインターフェース</span></span>
+                                <span class="req-tag tooltip">6.1<span class="tooltiptext">性能監視: 学習進捗記録機能</span></span>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="task8-2">
+                        <div class="task-content">
+                            <div class="task-title">認証・認可システムの実装</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>JWT ベース認証システムのテストを作成</li>
+                                    <li>Ray Cluster 認証統合と役割ベースアクセス制御を実装</li>
+                                    <li>セッション管理とセキュリティヘッダ設定をテスト・実装</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">SEC<span class="tooltiptext">セキュリティ要件: 認証・認可システム</span></span>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </details>
+
+            <details>
+                <summary>
+                    <span>9. データベース統合と永続化</span>
+                    <div class="section-info">
+                        <span class="section-progress">0/2</span>
+                        <div class="section-progress-bar">
+                            <div class="section-progress-fill"></div>
+                        </div>
+                    </div>
+                </summary>
+                <ul>
+                    <li>
+                        <input type="checkbox" id="task9-1">
+                        <div class="task-content">
+                            <div class="task-title">SQLite データベース統合</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>エージェント、環境、検証ログテーブルの作成テストを実装</li>
+                                    <li>SQLite による設定データとメタデータの永続化を実装</li>
+                                    <li>データベースマイグレーション機能をテスト・実装</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">1.2<span class="tooltiptext">動的エージェント管理: エージェント削除機能</span></span>
+                                <span class="req-tag tooltip">2.1<span class="tooltiptext">環境非依存: 標準化されたインターフェース</span></span>
+                                <span class="req-tag tooltip">3.1<span class="tooltiptext">データ検証: 妥当性検証機能</span></span>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="task9-2">
+                        <div class="task-content">
+                            <div class="task-title">Ray Object Store 統合</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>大容量Experience データのRay Object Store 保存テストを作成</li>
+                                    <li>ゼロコピー共有メモリによる効率的なデータ共有を実装</li>
+                                    <li>ガベージコレクションとメモリ管理機能をテスト・実装</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">5.6<span class="tooltiptext">分散学習: 優先度付きサンプリング</span></span>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </details>
+
+            <details>
+                <summary>
+                    <span>10. 統合テストと最終検証</span>
+                    <div class="section-info">
+                        <span class="section-progress">0/2</span>
+                        <div class="section-progress-bar">
+                            <div class="section-progress-fill"></div>
+                        </div>
+                    </div>
+                </summary>
+                <ul>
+                    <li>
+                        <input type="checkbox" id="task10-1">
+                        <div class="task-content">
+                            <div class="task-title">システム統合テストの実装</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>エージェント追加から学習完了までの完全フローのテストを作成</li>
+                                    <li>分散環境での障害回復シナリオテストを実装</li>
+                                    <li>マルチエージェント学習の協調動作をテスト・検証</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">ALL<span class="tooltiptext">全要件統合テスト</span></span>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="task10-2">
+                        <div class="task-content">
+                            <div class="task-title">パフォーマンステストと最適化</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>大量エージェント（1000+）でのストレステストを実装</li>
+                                    <li>メモリ使用量とCPU使用率の最適化を実行</li>
+                                    <li>目標性能（エージェント追加<2秒、Experience処理<10ms）の達成を検証</li>
+                                    <li>長時間実行でのメモリリーク検証を実行</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">PERF<span class="tooltiptext">パフォーマンス要件検証</span></span>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </details>
+
+            <details>
+                <summary>
+                    <span>11. End-to-Endテストとシステム検証</span>
+                    <div class="section-info">
+                        <span class="section-progress">0/2</span>
+                        <div class="section-progress-bar">
+                            <div class="section-progress-fill"></div>
+                        </div>
+                    </div>
+                </summary>
+                <ul>
+                    <li>
+                        <input type="checkbox" id="task11-1">
+                        <div class="task-content">
+                            <div class="task-title">実環境での統合動作テスト</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>Ray Cluster での分散学習パイプライン動作確認テストを実装</li>
+                                    <li>Gymnasium/PettingZoo 環境でのエージェント学習動作をテスト</li>
+                                    <li>オフラインモードでのデータ蓄積機能をEnd-to-Endで検証</li>
+                                    <li>全APIエンドポイントの統合動作をテスト</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">1.1-1.5<span class="tooltiptext">動的エージェント管理: 全要件</span></span>
+                                <span class="req-tag tooltip">2.1-2.5<span class="tooltiptext">環境非依存: 全要件</span></span>
+                                <span class="req-tag tooltip">3.1-3.6<span class="tooltiptext">データ検証: 全要件</span></span>
+                                <span class="req-tag tooltip">4.1-4.6<span class="tooltiptext">オフライン学習: 全要件</span></span>
+                                <span class="req-tag tooltip">5.1-5.6<span class="tooltiptext">分散学習: 全要件</span></span>
+                                <span class="req-tag tooltip">6.1-6.6<span class="tooltiptext">性能監視: 全要件</span></span>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="task11-2">
+                        <div class="task-content">
+                            <div class="task-title">システム全体の検証と文書化</div>
+                            <div class="task-details">
+                                <ul>
+                                    <li>全要件の実装完了と動作確認を実行</li>
+                                    <li>システム性能指標の測定と記録を実行</li>
+                                    <li>トラブルシューティングガイドの作成と検証を実行</li>
+                                    <li>実装コードのリファクタリングと最適化を実行</li>
+                                </ul>
+                            </div>
+                            <div class="req-tags">
+                                <span class="req-tag tooltip">FINAL<span class="tooltiptext">全要件達成確認</span></span>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </details>
+        </section>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const allTasks = document.querySelectorAll('input[type="checkbox"]');
+            const mainProgressBar = document.getElementById('main-progress-bar');
+            const mainProgressLabel = document.getElementById('main-progress-label');
+            const sections = document.querySelectorAll('details');
+
+            // 統計要素
+            const totalTasksElement = document.getElementById('total-tasks');
+            const completedTasksElement = document.getElementById('completed-tasks');
+            const completionRateElement = document.getElementById('completion-rate');
+            const activeSectionsElement = document.getElementById('active-sections');
+
+            function updateProgress() {
+                const completedTasks = document.querySelectorAll('input[type="checkbox"]:checked').length;
+                const totalTasks = allTasks.length;
+                const overallProgress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+
+                // メインプログレスバー更新
+                mainProgressBar.style.width = `${overallProgress}%`;
+                mainProgressLabel.textContent = `${Math.round(overallProgress)}%`;
+
+                // 統計更新
+                totalTasksElement.textContent = totalTasks;
+                completedTasksElement.textContent = completedTasks;
+                completionRateElement.textContent = `${Math.round(overallProgress)}%`;
+
+                // セクション別プログレス更新
+                sections.forEach(section => {
+                    const sectionTasks = section.querySelectorAll('input[type="checkbox"]');
+                    const sectionCompletedTasks = section.querySelectorAll('input[type="checkbox"]:checked').length;
+                    const sectionTotalTasks = sectionTasks.length;
+                    const sectionProgress = sectionTotalTasks > 0 ? (sectionCompletedTasks / sectionTotalTasks) * 100 : 0;
+                    
+                    const progressLabel = section.querySelector('.section-progress');
+                    const progressFill = section.querySelector('.section-progress-fill');
+                    
+                    if (progressLabel) {
+                        progressLabel.textContent = `${sectionCompletedTasks}/${sectionTotalTasks}`;
+                    }
+                    
+                    if (progressFill) {
+                        progressFill.style.width = `${sectionProgress}%`;
+                    }
+                });
+
+                // アクティブセクションの計算
+                let activeSections = 0;
+                sections.forEach(section => {
+                    const sectionTasks = section.querySelectorAll('input[type="checkbox"]');
+                    const sectionCompletedTasks = section.querySelectorAll('input[type="checkbox"]:checked').length;
+                    if (sectionCompletedTasks < sectionTasks.length) {
+                        activeSections++;
+                    }
+                });
+                activeSectionsElement.textContent = activeSections;
+            }
+
+            // タスク完了状態の視覚的更新
+            function updateTaskAppearance() {
+                allTasks.forEach(task => {
+                    const li = task.closest('li');
+                    if (task.checked) {
+                        li.classList.add('completed');
+                    } else {
+                        li.classList.remove('completed');
+                    }
+                });
+            }
+
+            // イベントリスナー設定
+            allTasks.forEach(task => {
+                task.addEventListener('change', () => {
+                    updateProgress();
+                    updateTaskAppearance();
+                    
+                    // ローカルストレージに保存
+                    const taskStates = Array.from(allTasks).map(t => ({
+                        id: t.id,
+                        checked: t.checked
+                    }));
+                    localStorage.setItem('taskStates', JSON.stringify(taskStates));
+                });
+            });
+
+            // ローカルストレージから復元
+            const savedStates = localStorage.getItem('taskStates');
+            if (savedStates) {
+                const taskStates = JSON.parse(savedStates);
+                taskStates.forEach(state => {
+                    const task = document.getElementById(state.id);
+                    if (task) {
+                        task.checked = state.checked;
+                    }
+                });
+            }
+
+            // 初期化
+            updateProgress();
+            updateTaskAppearance();
+        });
+    </script>
+
+</body>
+</html>
