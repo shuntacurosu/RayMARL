@@ -1,0 +1,35 @@
+# CartPole 環境設定
+
+environment:
+  name: "CartPole-v1"
+  type: "gymnasium"
+  
+  # 環境パラメータ
+  max_episode_steps: 500
+  reward_threshold: 475.0
+  
+  # 前処理設定
+  preprocessing:
+    normalize_observations: true
+    observation_clip_range: [-5.0, 5.0]
+    normalize_rewards: false
+    reward_clip_range: null
+    
+  # 描画設定
+  render:
+    mode: null  # "human", "rgb_array", null
+    record_video: false
+    video_frequency: 100
+    
+  # 環境固有設定
+  env_params:
+    # CartPole specific parameters can be added here
+    gravity: 9.8
+    masscart: 1.0
+    masspole: 0.1
+    
+  # 複数環境設定（並列実行用）
+  multi_env:
+    num_envs: 1
+    async_envs: false
+    shared_memory: false

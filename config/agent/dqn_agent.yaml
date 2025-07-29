@@ -1,0 +1,43 @@
+# DQN エージェント設定
+
+agent:
+  type: "DQNAgent"
+  
+  # 学習パラメータ
+  learning_rate: 0.001
+  discount_factor: 0.99
+  epsilon: 0.1
+  epsilon_decay: 0.995
+  epsilon_min: 0.01
+  
+  # Experience Replay設定
+  memory_size: 100000
+  batch_size: 32
+  min_replay_size: 1000
+  
+  # ネットワーク更新設定
+  target_update_frequency: 1000
+  gradient_clip_norm: 1.0
+  
+  # ネットワーク構造
+  network:
+    hidden_layers: [128, 128]
+    activation: "relu"
+    dropout: 0.1
+    use_dueling: false
+    use_double_dqn: true
+    use_noisy_nets: false
+  
+  # 学習スケジュール
+  training:
+    warm_up_steps: 1000
+    train_frequency: 4
+    evaluation_frequency: 1000
+    save_frequency: 5000
+  
+  # 最適化設定
+  optimizer:
+    type: "Adam"
+    betas: [0.9, 0.999]
+    weight_decay: 0.0001
+    amsgrad: false

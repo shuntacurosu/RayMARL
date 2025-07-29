@@ -1,0 +1,57 @@
+# AdaptiveMA - メイン設定ファイル
+# Hydra configuration for adaptive multi-agent system
+
+defaults:
+  - agent: dqn_agent
+  - environment: cartpole
+  - distributed: local_cluster
+  - validation: standard_validation
+  - logging: default_logging
+  - _self_
+
+# システム全体設定
+system:
+  name: "AdaptiveMA"
+  version: "0.1.0"
+  debug: false
+  seed: 42
+
+# 実行モード設定
+execution:
+  mode: "training"  # training, evaluation, offline_collection
+  max_episodes: 1000
+  max_steps_per_episode: 500
+  checkpoint_frequency: 100
+  
+# Ray cluster 設定
+ray:
+  address: null  # null for local cluster, or "ray://head_node_ip:10001"
+  runtime_env:
+    working_dir: "."
+    pip: "requirements.txt"
+  resources:
+    num_cpus: null  # null for auto-detection
+    num_gpus: 0
+    memory: null
+
+# 出力設定
+output:
+  base_dir: "outputs"
+  experiment_name: "adaptive_ma_experiment"
+  save_checkpoints: true
+  save_metrics: true
+  save_videos: false
+
+# 監視設定
+monitoring:
+  enable_tensorboard: true
+  enable_ray_dashboard: true
+  metrics_update_frequency: 10  # steps
+  log_level: "INFO"
+
+# パフォーマンス設定
+performance:
+  batch_size: 32
+  prefetch_size: 2
+  num_data_workers: 2
+  pin_memory: true

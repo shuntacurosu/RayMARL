@@ -8,7 +8,11 @@
       "Bash(gh issue create --title \"4. 分散エージェント管理システム\" --body \"$(cat <<''EOF''\n## 概要\nRay を使用した分散エージェント管理システムとDQNエージェントを実装します。\n\n## 実装内容\n\n### 4.1 Agent Manager の実装\n- [ ] AgentManager クラスのテストを作成（エージェント追加・削除・スケーリング）\n- [ ] Ray Remote Actor を使用した動的エージェント管理を実装\n- [ ] エージェント状態監視と負荷バランシング機能をテスト・実装\n- **Requirements**: 1.1, 1.2, 1.3, 1.4, 1.5\n\n### 4.2 DQN Agent の実装\n- [ ] DQN Agent クラスのテストを作成（学習、推論、経験収集）\n- [ ] PyTorch を使用したDQNネットワーク（CNN + FC）を実装\n- [ ] Target Network の更新機能とDouble DQN サポートを追加\n- [ ] エージェント間のパラメータ同期機能をテスト・実装\n- **Requirements**: 5.1, 5.2\n\n## 成功条件\n- エージェントの動的スケーリングが可能\n- DQN学習が正常に動作する\n- 分散環境でのパラメータ同期が機能する\nEOF\n)\")",
       "Bash(gh issue create --title \"5. 分散学習協調システム\" --body \"$(cat <<''EOF''\n## 概要\n分散学習環境でのパラメータ同期と協調学習システムを実装します。\n\n## 実装内容\n\n### 5.1 Parameter Server の実装\n- [ ] Parameter Server のテストを作成（パラメータ同期、勾配更新）\n- [ ] Ray Actor を使用した分散Parameter Server を実装\n- [ ] 非同期パラメータ更新と一貫性維持機能をテスト・実装\n- **Requirements**: 5.1, 5.2\n\n### 5.2 Distributed Coordinator の実装\n- [ ] DistributedCoordinator のテストを作成（クラスタ管理、障害処理）\n- [ ] Ray Cluster 初期化と動的スケーリング機能を実装\n- [ ] ワーカー障害検出と自動復旧機能をテスト・実装\n- [ ] 負荷分散とリソース最適化機能を追加\n- **Requirements**: 5.3, 5.4, 5.5\n\n## 成功条件\n- 分散学習が安定して動作する\n- 障害時の自動復旧が機能する\n- パラメータ同期が正確に行われる\nEOF\n)\")",
       "Bash(gh issue create:*)",
-      "Bash(gh issue:*)"
+      "Bash(gh issue:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)",
+      "Bash(git checkout:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }
