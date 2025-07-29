@@ -1,0 +1,52 @@
+# 標準データ検証設定
+
+validation:
+  enabled: true
+  
+  # 基本閾値設定
+  thresholds:
+    reward_min: -1000.0
+    reward_max: 1000.0
+    quality_threshold: 0.5
+    consistency_threshold: 0.8
+    
+  # 異常値検出設定
+  outlier_detection:
+    method: "iqr"  # iqr, zscore, isolation_forest
+    iqr_factor: 1.5
+    zscore_threshold: 3.0
+    isolation_forest_contamination: 0.1
+    
+  # 物理制約検証
+  physical_constraints:
+    max_state_change: 10.0
+    max_velocity: 100.0
+    min_time_delta: 0.001  # seconds
+    energy_conservation_check: false
+    
+  # データ品質監視
+  quality_monitoring:
+    window_size: 1000  # samples
+    update_frequency: 100  # samples
+    alert_threshold: 0.3  # quality score
+    
+  # 整合性チェック
+  consistency_checks:
+    state_dimension_check: true
+    action_space_check: true
+    reward_range_check: true
+    temporal_consistency: true
+    agent_synchronization: true
+    
+  # バッチ処理設定
+  batch_processing:
+    batch_size: 100
+    parallel_validation: true
+    num_validation_workers: 2
+    
+  # ログ設定
+  logging:
+    log_invalid_samples: true
+    log_quality_reports: true
+    report_frequency: 1000  # samples
+    save_validation_history: true

@@ -1,0 +1,44 @@
+# ローカル分散クラスター設定
+
+distributed:
+  type: "local"
+  
+  # クラスター構成
+  cluster:
+    num_workers: 2
+    worker_cpus: 1
+    worker_memory: 2048  # MB
+    worker_gpus: 0
+    
+  # Parameter Server 設定
+  parameter_server:
+    type: "AsyncParameterServer"
+    update_frequency: 10  # steps
+    aggregation_method: "mean"  # mean, sum, weighted_mean
+    staleness_threshold: 5
+    
+  # 負荷分散設定
+  load_balancing:
+    strategy: "round_robin"  # round_robin, least_loaded, random
+    rebalance_frequency: 100  # steps
+    auto_scaling: false
+    
+  # 障害処理設定
+  fault_tolerance:
+    max_retries: 3
+    retry_delay: 1.0  # seconds
+    health_check_interval: 30.0  # seconds
+    worker_timeout: 120.0  # seconds
+    
+  # 通信設定
+  communication:
+    compression: "lz4"  # none, lz4, gzip
+    serialization: "pickle"  # pickle, cloudpickle
+    timeout: 60.0  # seconds
+    max_message_size: 100  # MB
+    
+  # Experience sharing設定
+  experience_sharing:
+    strategy: "centralized"  # centralized, decentralized, hybrid
+    buffer_sync_frequency: 50  # steps
+    priority_sharing: true
