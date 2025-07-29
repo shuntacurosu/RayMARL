@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 from datetime import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .exceptions import DataValidationError
 
@@ -20,11 +20,7 @@ class ValidationResult:
     quality_score: float
     anomaly_flags: List[str]
     constraint_violations: List[str]
-    validated_at: datetime
-    
-    def __post_init__(self):
-        if self.validated_at is None:
-            self.validated_at = datetime.now()
+    validated_at: datetime = field(default_factory=datetime.now)
 
 
 @dataclass 
@@ -36,12 +32,8 @@ class Experience:
     next_state: np.ndarray
     done: bool
     agent_id: str
-    timestamp: datetime
+    timestamp: datetime = field(default_factory=datetime.now)
     priority: float = 1.0
-    
-    def __post_init__(self):
-        if self.timestamp is None:
-            self.timestamp = datetime.now()
 
 
 class DataValidator(ABC):

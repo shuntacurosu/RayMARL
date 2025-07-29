@@ -10,6 +10,7 @@ import numpy as np
 from datetime import datetime
 
 from ..utils.exceptions import EnvironmentAdapterError
+from ..utils.logging import get_logger
 
 
 class EnvironmentAdapter(ABC):
@@ -34,6 +35,7 @@ class EnvironmentAdapter(ABC):
         self._environment = None
         self._observation_space = None
         self._action_space = None
+        self.logger = get_logger(f"adaptive_ma.environment.{env_name}")
         
     @abstractmethod
     def create_environment(self) -> Any:
@@ -159,7 +161,13 @@ class EnvironmentAdapter(ABC):
             if hasattr(action_space, 'contains'):
                 return action_space.contains(action)
             return True
-        except Exception:
+        except (AttributeError, TypeError, ValueError) as e:
+            self.logger.warning(f"Action validation failed: {e}", 
+                              action=str(action), exception_type=type(e).__name__)
+            return False
+        except Exception as e:
+            self.logger.error(f"Unexpected error during action validation: {e}", 
+                             action=str(action), exception_type=type(e).__name__)
             return False
     
     def get_render_modes(self) -> List[str]:

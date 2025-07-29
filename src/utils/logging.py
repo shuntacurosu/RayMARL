@@ -253,32 +253,28 @@ class AdaptiveMALogger:
     
     def debug(self, message: str, **kwargs) -> None:
         """Debug レベルログ"""
-        self._log(logging.DEBUG, message, kwargs)
+        extra = {"extra_fields": kwargs} if kwargs else {}
+        self.logger.debug(message, extra=extra)
     
     def info(self, message: str, **kwargs) -> None:
         """Info レベルログ"""
-        self._log(logging.INFO, message, kwargs)
+        extra = {"extra_fields": kwargs} if kwargs else {}
+        self.logger.info(message, extra=extra)
     
     def warning(self, message: str, **kwargs) -> None:
         """Warning レベルログ"""
-        self._log(logging.WARNING, message, kwargs)
+        extra = {"extra_fields": kwargs} if kwargs else {}
+        self.logger.warning(message, extra=extra)
     
     def error(self, message: str, **kwargs) -> None:
         """Error レベルログ"""
-        self._log(logging.ERROR, message, kwargs)
+        extra = {"extra_fields": kwargs} if kwargs else {}
+        self.logger.error(message, extra=extra)
     
     def critical(self, message: str, **kwargs) -> None:
         """Critical レベルログ"""
-        self._log(logging.CRITICAL, message, kwargs)
-    
-    def _log(self, level: int, message: str, extra_fields: Dict[str, Any]) -> None:
-        """内部ログメソッド"""
-        record = self.logger.makeRecord(
-            self.logger.name, level, __file__, 0, message, None, None
-        )
-        if extra_fields:
-            record.extra_fields = extra_fields
-        self.logger.handle(record)
+        extra = {"extra_fields": kwargs} if kwargs else {}
+        self.logger.critical(message, extra=extra)
     
     def log_agent_event(self, agent_id: str, event: str, **kwargs) -> None:
         """エージェントイベントログ"""

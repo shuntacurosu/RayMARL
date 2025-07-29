@@ -73,7 +73,7 @@ class TestExperience:
         assert exp.agent_id == "test_agent_001"
         assert exp.action == 1
         assert exp.reward == 1.0
-        assert exp.done == False
+        assert exp.done is False
         assert exp.priority == 1.0
         assert isinstance(exp.timestamp, datetime)
     

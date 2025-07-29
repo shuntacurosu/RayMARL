@@ -5,6 +5,7 @@ Base Agent Class
 """
 
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import ray
@@ -139,7 +140,7 @@ class BaseAgent(ABC):
         }
 
 
-class AgentStatus:
+class AgentStatus(Enum):
     """エージェント状態定数"""
     INITIALIZING = "initializing"
     READY = "ready" 

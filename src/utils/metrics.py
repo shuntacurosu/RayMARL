@@ -232,9 +232,20 @@ class MetricsCollector:
         summaries = {}
         with self._lock:
             for full_name in self._metrics:
-                # Extract base name from full name
-                base_name = full_name.split("{")[0] if "{" in full_name else full_name
-                summary = self.get_summary(base_name)
+                # Parse base name and tags from full name
+                if "{" in full_name:
+                    base_name = full_name.split("{")[0]
+                    tag_str = full_name.split("{")[1].rstrip("}")
+                    tags = {}
+                    if tag_str:
+                        for tag_pair in tag_str.split(","):
+                            key, value = tag_pair.split("=", 1)
+                            tags[key] = value
+                else:
+                    base_name = full_name
+                    tags = None
+                
+                summary = self.get_summary(base_name, tags)
                 if summary:
                     summaries[full_name] = summary
         return summaries
@@ -395,13 +406,16 @@ class MetricsReporter:
 # Global metrics collector
 _global_collector: Optional[MetricsCollector] = None
 _global_reporter: Optional[MetricsReporter] = None
+_collector_lock = threading.Lock()
 
 
 def get_metrics_collector() -> MetricsCollector:
     """グローバルメトリクス収集器を取得"""
     global _global_collector
     if _global_collector is None:
-        _global_collector = MetricsCollector()
+        with _collector_lock:
+            if _global_collector is None:
+                _global_collector = MetricsCollector()
     return _global_collector
 
 
